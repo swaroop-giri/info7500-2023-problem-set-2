@@ -1,5 +1,4 @@
 use crate::util::{Hash32Bytes, write_merkle_proof,encode_hash,hash_internal, MerkleProof, hash_leaf};
-use sha2::{Sha256, Digest};
 
 fn gen_leaves_for_merkle_tree(num_leaves: usize) -> Vec<String> {
     let leaves: Vec<String> = (0..num_leaves)
@@ -46,23 +45,11 @@ pub fn gen_merkle_proof(leaves: Vec<String>, leaf_pos: usize) -> Vec<Hash32Bytes
             hashes.push(zeros);
         }
 
-        // Function to hash two nodes
-
-        fn hash_nodes(left: &Hash32Bytes, right: &Hash32Bytes) -> Hash32Bytes {
-            let mut hasher = Sha256::new();
-            hasher.update(left);
-            hasher.update(right);
-            let result = hasher.finalize();
-            let mut hash = [0u8; 32];
-            hash.copy_from_slice(&result);
-            hash
-        }
-
         // Calculate the parent hash of the current leaf and sibling
         let parent_hash = if is_right_sibling {
-            hash_nodes(&state[sibling_pos], &state[level_pos])
+            hash_internal(state[sibling_pos], state[level_pos])
         } else {
-            hash_nodes(&state[level_pos], &state[sibling_pos])
+            hash_internal(state[level_pos], state[sibling_pos])
         };
 
         // Update the current position to the parent position for the next iteration
