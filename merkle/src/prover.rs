@@ -29,10 +29,13 @@ pub fn gen_merkle_proof(leaves: Vec<String>, leaf_pos: usize) -> Vec<Hash32Bytes
     let mut level_pos = leaf_pos;
     for _level in 0..height {
         let is_right_sibling = level_pos % 2 == 0; // Check if the current leaf is a right sibling
-        let sibling_pos = if is_right_sibling {
+        let sibling_pos = if is_right_sibling && level_pos >= 1 {
             level_pos - 1
-        } else {
+        } else if !is_right_sibling {
             level_pos + 1
+        } else {
+            // Handle the case when level_pos is 0 and is_right_sibling is true
+            0
         };
 
         if sibling_pos < state.len() {
