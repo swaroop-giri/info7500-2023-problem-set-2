@@ -27,38 +27,22 @@ pub fn gen_merkle_proof(leaves: Vec<String>, leaf_pos: usize) -> Vec<Hash32Bytes
 
     let mut level_pos = leaf_pos;
     for _level in 0..height {
-        let is_right_sibling = level_pos % 2 == 0; // Check if the current leaf is a right sibling
-        let sibling_pos = if is_right_sibling && level_pos >= 1 {
-            level_pos - 1
-        } else if !is_right_sibling {
-            level_pos + 1
+        // Check if the level position is even or odd
+        if level_pos % 2 == 0 {
+            // Add the right sibling to the proof
+            hashes.push(state[level_pos + 1]);
         } else {
-            // Handle the case when level_pos is 0 and is_right_sibling is true
-            0
-        };
-
-        if sibling_pos < state.len() {
-            // Append the sibling hash to the proof
-            hashes.push(state[sibling_pos].clone());
-        } else {
-            // If there's no sibling, use a zero hash
-            hashes.push(zeros);
+            // Add the left sibling to the proof
+            hashes.push(state[level_pos - 1]);
+        }        // Compute parent hashes for the next level
+        let mut next_state: Vec<Hash32Bytes> = vec![];
+        for i in (0..state.len()).step_by(2) {
+            next_state.push(hash_internal(state[i], state[i + 1]));
         }
-
-        // Calculate the parent hash of the current leaf and sibling
-        let parent_hash = if is_right_sibling {
-            hash_internal(state[sibling_pos], state[level_pos])
-        } else {
-            hash_internal(state[level_pos], state[sibling_pos])
-        };
-
-        // Update the current position to the parent position for the next iteration
-        level_pos = level_pos / 2;
-
-        // Replace the current leaf hash with the parent hash
-        state.push(parent_hash);
+        state = next_state;        // Move to the parent’s position
+        level_pos /= 2;
     }
-
+    println!("Hash: {}",encode_hash(state[0]));
     // Returns list of hashes that make up the Merkle Proof
     hashes
 }
